@@ -84,20 +84,20 @@ fun Start(m: Modifier) {
     var mariaPosition by remember { mutableStateOf(0f) } // 瑪利亞水平位置
     var mariaImageIndex by remember { mutableStateOf(0) } // 隨機生成瑪利亞圖片索引
     var score by remember { mutableStateOf(0) } // 遊戲分數
+    var isGameRunning by remember { mutableStateOf(true) } // 控制遊戲是否進行中
 
     val coroutineScope = rememberCoroutineScope()
 
     // 啟動遊戲邏輯
-    LaunchedEffect(Unit) {
-        while (mariaPosition < 1080f) { // 假設螢幕寬度為 1080 像素
-            gameTime += 1 // 每秒增加遊戲持續時間
+    LaunchedEffect(isGameRunning) {
+        while (isGameRunning) {
+            delay(1000L) // 每秒執行
+            gameTime += 1
             mariaPosition += 50f // 瑪利亞每秒向右移動 50 像素
-            delay(1000L) // 等待 1 秒
 
-            // 當瑪利亞移出螢幕右側，重置到初始狀態
-            if (mariaPosition >= 1080f) {
-                mariaPosition = 0f
-                mariaImageIndex = (0..3).random() // 隨機生成新圖片
+            // 當瑪利亞移出螢幕右側，暫停遊戲
+            if (mariaPosition >= 1080f) { // 假設螢幕寬度為 1080 像素
+                isGameRunning = false
             }
         }
     }
@@ -133,7 +133,7 @@ fun Start(m: Modifier) {
         ) {
             Text(
                 text = "2024期末上機考(資管二A林宜潔)",
-                style = TextStyle(fontSize = 10.sp, color = Color.Black)
+                style = TextStyle(fontSize = 12.sp, color = Color.Black)
             )
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -175,35 +175,37 @@ fun Start(m: Modifier) {
         }
 
         // 瑪利亞圖片
-        Image(
-            painter = painterResource(id = when (mariaImageIndex) {
-                0 -> R.drawable.maria0
-                1 -> R.drawable.maria1
-                2 -> R.drawable.maria2
-                else -> R.drawable.maria3
-            }), // 根據索引顯示不同圖片
-            contentDescription = "瑪利亞",
-            modifier = Modifier
-                .width(200.dp)
-                .height(200.dp)
-                .align(Alignment.BottomStart)
-                .offset(x = mariaPosition.dp, y = 0.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            // 雙擊檢測
-                            if (currentIndex == mariaImageIndex) { // 背景顏色與圖片顏色索引相同
-                                score += 1
-                            } else {
-                                score -= 1
+        if (isGameRunning) { // 只有遊戲進行中才顯示瑪利亞
+            Image(
+                painter = painterResource(id = when (mariaImageIndex) {
+                    0 -> R.drawable.maria0
+                    1 -> R.drawable.maria1
+                    2 -> R.drawable.maria2
+                    else -> R.drawable.maria3
+                }), // 根據索引顯示不同圖片
+                contentDescription = "瑪利亞",
+                modifier = Modifier
+                    .width(200.dp)
+                    .height(200.dp)
+                    .align(Alignment.BottomStart)
+                    .offset(x = mariaPosition.dp, y = 0.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                // 雙擊檢測
+                                if (currentIndex == mariaImageIndex) { // 背景顏色與圖片顏色索引相同
+                                    score += 1
+                                } else {
+                                    score -= 1
+                                }
+                                // 重置瑪利亞圖片
+                                mariaPosition = 0f
+                                mariaImageIndex = (0..3).random()
                             }
-                            // 重置瑪利亞圖片
-                            mariaPosition = 0f
-                            mariaImageIndex = (0..3).random()
-                        }
-                    )
-                }
-        )
+                        )
+                    }
+            )
+        }
     }
 }
 

@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -77,10 +78,12 @@ fun Start(m: Modifier) {
         Color(0xffa5dfed)
     )
 
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by remember { mutableStateOf(0) } // Box 的背景顏色索引
     var isSwiping by remember { mutableStateOf(false) }
     var gameTime by remember { mutableStateOf(0) } // 遊戲持續時間
     var mariaPosition by remember { mutableStateOf(0f) } // 瑪利亞水平位置
+    var mariaImageIndex by remember { mutableStateOf(0) } // 隨機生成瑪利亞圖片索引
+    var score by remember { mutableStateOf(0) } // 遊戲分數
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -90,6 +93,12 @@ fun Start(m: Modifier) {
             gameTime += 1 // 每秒增加遊戲持續時間
             mariaPosition += 50f // 瑪利亞每秒向右移動 50 像素
             delay(1000L) // 等待 1 秒
+
+            // 當瑪利亞移出螢幕右側，重置到初始狀態
+            if (mariaPosition >= 1080f) {
+                mariaPosition = 0f
+                mariaImageIndex = (0..3).random() // 隨機生成新圖片
+            }
         }
     }
 
@@ -145,7 +154,7 @@ fun Start(m: Modifier) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "您的成績 0 分",
+                text = "您的成績 $score 分",
                 style = TextStyle(fontSize = 10.sp, color = Color.Black)
             )
             Spacer(modifier = Modifier.height(32.dp))
@@ -165,15 +174,35 @@ fun Start(m: Modifier) {
             }
         }
 
-        // 瑪利亞圖片從螢幕左下角開始
+        // 瑪利亞圖片
         Image(
-            painter = painterResource(id = R.drawable.maria2), // 將圖片替換為 maria2.png
+            painter = painterResource(id = when (mariaImageIndex) {
+                0 -> R.drawable.maria0
+                1 -> R.drawable.maria1
+                2 -> R.drawable.maria2
+                else -> R.drawable.maria3
+            }), // 根據索引顯示不同圖片
             contentDescription = "瑪利亞",
             modifier = Modifier
                 .width(200.dp)
                 .height(200.dp)
                 .align(Alignment.BottomStart)
-                .offset(x = mariaPosition.dp, y = 0.dp) // 水平移動
+                .offset(x = mariaPosition.dp, y = 0.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            // 雙擊檢測
+                            if (currentIndex == mariaImageIndex) { // 背景顏色與圖片顏色索引相同
+                                score += 1
+                            } else {
+                                score -= 1
+                            }
+                            // 重置瑪利亞圖片
+                            mariaPosition = 0f
+                            mariaImageIndex = (0..3).random()
+                        }
+                    )
+                }
         )
     }
 }

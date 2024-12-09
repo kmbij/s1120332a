@@ -42,6 +42,7 @@ fun MainScreen() {
     val gameTime = remember { 0 }
     val score = remember { 0 }
 
+
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -24,9 +25,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import tw.edu.pu.s1120332a.ui.theme.S1120332aTheme
 
@@ -65,37 +69,46 @@ class MainActivity : ComponentActivity() {
 fun Start(m: Modifier) {
     val context = LocalContext.current
 
-    // 定義背景顏色列表
+    // 背景顏色
     val colors = listOf(
-        Color(0xff95fe95), // 顏色 1
-        Color(0xfffdca0f), // 顏色 2
-        Color(0xfffea4a4), // 顏色 3
-        Color(0xffa5dfed)  // 顏色 4
+        Color(0xff95fe95),
+        Color(0xfffdca0f),
+        Color(0xfffea4a4),
+        Color(0xffa5dfed)
     )
 
-    // 當前顏色索引
     var currentIndex by remember { mutableStateOf(0) }
-    // 防止快速重複滑動
     var isSwiping by remember { mutableStateOf(false) }
+    var gameTime by remember { mutableStateOf(0) } // 遊戲持續時間
+    var mariaPosition by remember { mutableStateOf(0f) } // 瑪利亞水平位置
 
+    val coroutineScope = rememberCoroutineScope()
+
+    // 啟動遊戲邏輯
+    LaunchedEffect(Unit) {
+        while (mariaPosition < 1080f) { // 假設螢幕寬度為 1080 像素
+            gameTime += 1 // 每秒增加遊戲持續時間
+            mariaPosition += 50f // 瑪利亞每秒向右移動 50 像素
+            delay(1000L) // 等待 1 秒
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors[currentIndex]) // 根據索引設置背景顏色
+            .background(colors[currentIndex])
             .pointerInput(Unit) {
                 detectHorizontalDragGestures { change, dragAmount ->
                     if (!isSwiping) {
                         isSwiping = true
-                        change.consume() // 消耗滑動事件
-                        if (dragAmount > 0) { // 右滑
+                        change.consume()
+                        if (dragAmount > 0) {
                             currentIndex = (currentIndex - 1 + colors.size) % colors.size
-                        } else if (dragAmount < 0) { // 左滑
+                        } else if (dragAmount < 0) {
                             currentIndex = (currentIndex + 1) % colors.size
                         }
-                        // 延遲一段時間，避免快速滑動
-                        kotlinx.coroutines.GlobalScope.launch {
-                            kotlinx.coroutines.delay(500) // 延遲500毫秒
+                        coroutineScope.launch {
+                            delay(500)
                             isSwiping = false
                         }
                     }
@@ -116,17 +129,17 @@ fun Start(m: Modifier) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Image(
-                painter = painterResource(id = R.drawable.class_a), // 確保圖片存在於 res/drawable 目錄下
+                painter = painterResource(id = R.drawable.class_a),
                 contentDescription = "Class Image",
                 modifier = Modifier
-                    .fillMaxWidth() // 讓圖片寬度填滿版面
-                    .wrapContentHeight(), // 根據圖片比例自動調整高度
-                contentScale = ContentScale.Fit // 確保圖片完整顯示，不裁剪
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "遊戲持續時間 0 秒",
+                text = "遊戲持續時間 $gameTime 秒",
                 style = TextStyle(fontSize = 10.sp, color = Color.Black)
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -139,9 +152,8 @@ fun Start(m: Modifier) {
 
             Button(
                 onClick = {
-                    // 使用 LocalContext.current 並檢查是否為 Activity
                     val activity = context as? Activity
-                    activity?.finish() // 如果是 Activity，則結束它
+                    activity?.finish()
                 },
                 modifier = Modifier
                     .padding(top = 16.dp)
@@ -152,6 +164,17 @@ fun Start(m: Modifier) {
                 Text(text = "結束App")
             }
         }
+
+        // 瑪利亞圖片從螢幕左下角開始
+        Image(
+            painter = painterResource(id = R.drawable.maria2), // 將圖片替換為 maria2.png
+            contentDescription = "瑪利亞",
+            modifier = Modifier
+                .width(200.dp)
+                .height(200.dp)
+                .align(Alignment.BottomStart)
+                .offset(x = mariaPosition.dp, y = 0.dp) // 水平移動
+        )
     }
 }
 
